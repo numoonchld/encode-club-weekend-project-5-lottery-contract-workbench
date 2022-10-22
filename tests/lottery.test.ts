@@ -5,15 +5,33 @@ import { BigNumber } from 'ethers'
 
 describe('Lottery', () => {
   let lotteryContract: Lottery
-  let BET_PRICE: BigNumber
-  let BET_FEE: BigNumber
+
+  let BET_PRICE: Number
+  let BET_FEE: Number
+
+  let BET_PRICE_DEPLOY_FRIENDLY_FORMAT: BigNumber
+  let BET_FEE_DEPLOY_FRIENDLY_FORMAT: BigNumber
 
   before(async () => {
-    BET_PRICE = ethers.utils.parseEther('0.5')
-    BET_FEE = ethers.utils.parseEther('0.01')
+    // ether values in string type
+    // BET_PRICE = ethers.utils.parseEther('0.5')
+    // BET_FEE = ethers.utils.parseEther('0.01')
+
+    // ether value in Number type
+    BET_PRICE = 0.5
+    BET_FEE = 0.01
+    BET_PRICE_DEPLOY_FRIENDLY_FORMAT = ethers.utils.parseEther(
+      BET_PRICE.toFixed(18),
+    )
+    BET_FEE_DEPLOY_FRIENDLY_FORMAT = ethers.utils.parseEther(
+      BET_FEE.toFixed(18),
+    )
 
     const lotteryContractFactory = await ethers.getContractFactory('Lottery')
-    lotteryContract = await lotteryContractFactory.deploy(BET_PRICE, BET_FEE)
+    lotteryContract = await lotteryContractFactory.deploy(
+      BET_PRICE_DEPLOY_FRIENDLY_FORMAT,
+      BET_FEE_DEPLOY_FRIENDLY_FORMAT,
+    )
     await lotteryContract.deployed()
   })
 
@@ -22,8 +40,12 @@ describe('Lottery', () => {
       const [deployer] = await ethers.getSigners()
 
       expect(await lotteryContract.owner()).to.eq(deployer.address)
-      expect(await lotteryContract.betPrice()).to.eq(BET_PRICE)
-      expect(await lotteryContract.betFee()).to.eq(BET_FEE)
+      expect(await lotteryContract.betPrice()).to.eq(
+        BET_PRICE_DEPLOY_FRIENDLY_FORMAT,
+      )
+      expect(await lotteryContract.betFee()).to.eq(
+        BET_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
     })
 
     it('Reverts when closing time is in the past', async () => {
@@ -52,7 +74,7 @@ describe('Lottery', () => {
     })
   })
 
-  describe('Players must buy an ERC20 with ETH', () => {})
+  describe('Players must buy ERC20 with ETH', () => {})
   describe('Players pay ERC20 to bet, Only possible before block timestamp met', () => {})
   describe('Anyone can roll the lottery, Only after block timestamp target is met', () => {})
   describe('Winner receives the pooled ERC20 minus fee', () => {})
