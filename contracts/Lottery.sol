@@ -16,6 +16,11 @@ contract Lottery is Ownable {
         betFee = _betFee;
     }
 
+    modifier whenLotteryClosed() {
+        require(!lotteryOpen, "Lottery: Note currently open for bets");
+        _;
+    }
+
     receive() external payable {
         // ...
     }
@@ -37,10 +42,14 @@ contract Lottery is Ownable {
     // ...
 
     /// @param _closingEpochInSeconds epoch time in seconds when the lottery will close for bets
-    function startLottery(uint256 _closingEpochInSeconds) public onlyOwner {
+    function startLottery(uint256 _closingEpochInSeconds)
+        public
+        onlyOwner
+        whenLotteryClosed
+    {
         require(
             _closingEpochInSeconds > block.timestamp,
-            "Closing time must be in the future"
+            "Lottery: Closing time must be in the future"
         );
         lotteryClosingEpochInSeconds = _closingEpochInSeconds;
         lotteryOpen = true;
