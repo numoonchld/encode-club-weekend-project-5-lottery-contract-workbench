@@ -4,7 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Lottery is Ownable {
-    uint256 public lottryClosingEpochInSeconds;
+    uint256 public lotteryClosingEpochInSeconds;
     bool public lotteryOpen;
 
     uint256 public betPrice;
@@ -42,7 +42,7 @@ contract Lottery is Ownable {
             _closingEpochInSeconds > block.timestamp,
             "Closing time must be in the future"
         );
-        lottryClosingEpochInSeconds = _closingEpochInSeconds;
+        lotteryClosingEpochInSeconds = _closingEpochInSeconds;
         lotteryOpen = true;
     }
 
