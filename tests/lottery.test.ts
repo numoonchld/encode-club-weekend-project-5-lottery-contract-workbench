@@ -92,11 +92,19 @@ describe('Lottery', () => {
     it('validates players buying lottery token', async () => {
       const [, playerA] = await ethers.getSigners()
 
+      expect(await ethers.provider.getBalance(lotteryContract.address)).to.eq(
+        ethers.utils.parseEther('0'),
+      )
+
       await lotteryContract
         .connect(playerA)
         .sellLotteryTokens({ value: ethers.utils.parseEther('1') })
 
       expect(await lotteryTokenContract.balanceOf(playerA.address)).to.eq(
+        ethers.utils.parseEther('1'),
+      )
+
+      expect(await ethers.provider.getBalance(lotteryContract.address)).to.eq(
         ethers.utils.parseEther('1'),
       )
     })
