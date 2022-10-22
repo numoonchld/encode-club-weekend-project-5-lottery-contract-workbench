@@ -1,7 +1,7 @@
 import { Lottery } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber } from 'ethers'
 
 describe('Lottery', () => {
   let lotteryContract: Lottery
@@ -24,6 +24,17 @@ describe('Lottery', () => {
       expect(await lotteryContract.owner()).to.eq(deployer.address)
       expect(await lotteryContract.betPrice()).to.eq(BET_PRICE)
       expect(await lotteryContract.betFee()).to.eq(BET_FEE)
+    })
+
+    it('Reverts when closing time is in the past', async () => {
+      const currentEpochInSeconds = Math.floor(new Date().getTime() / 1000.0)
+      const closingEpochInSeconds = currentEpochInSeconds - 3 * 60
+
+      expect(await lotteryContract.lotteryOpen()).to.be.false
+
+      await expect(
+        lotteryContract.startLottery(closingEpochInSeconds),
+      ).to.be.revertedWith('Closing time must be in the future')
     })
 
     it('Define a block timestamp target (for closing lottery bets), upon lottery start by Owner', async () => {

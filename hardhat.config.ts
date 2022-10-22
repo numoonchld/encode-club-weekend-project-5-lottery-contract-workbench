@@ -2,6 +2,7 @@ import { HardhatUserConfig, task } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
 import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
+require('@nomicfoundation/hardhat-chai-matchers')
 
 const config: HardhatUserConfig = {
   solidity: {
