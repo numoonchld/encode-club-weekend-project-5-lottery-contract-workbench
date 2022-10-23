@@ -63,5 +63,105 @@ describe('Lottery', () => {
     )
   })
 
-  describe('Owner can withdraw fees and restart lottery', () => {})
+  describe('Owner can withdraw fees and restart lottery', () => {
+    it('validates fees withdraw by owner - after at least one lottery has ended', async () => {
+      const [
+        deployer,
+        playerA,
+        playerB,
+        playerC,
+        playerD,
+      ] = await ethers.getSigners()
+
+      lotteryStartEpochInSeconds = currentEpoch()
+
+      const lotteryEndEpochInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
+
+      // https://ethereum.stackexchange.com/a/112809
+      const newTimestampInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS * 2
+
+      await lotteryContract
+        .connect(playerA)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
+
+      await lotteryTokenContract
+        .connect(playerA)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerA.address),
+        )
+
+      await lotteryContract
+        .connect(playerB)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('15') })
+
+      await lotteryTokenContract
+        .connect(playerB)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerB.address),
+        )
+
+      await lotteryContract
+        .connect(playerC)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('20') })
+      await lotteryTokenContract
+        .connect(playerC)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerC.address),
+        )
+
+      await lotteryContract
+        .connect(playerD)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('25') })
+
+      await lotteryTokenContract
+        .connect(playerD)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerD.address),
+        )
+
+      const playerAddresses = [
+        playerA.address,
+        playerB.address,
+        playerC.address,
+        playerD.address,
+      ]
+
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
+
+      await lotteryContract.connect(playerA).bet()
+      await lotteryContract.connect(playerB).bet()
+      await lotteryContract.connect(playerC).bet()
+      await lotteryContract.connect(playerA).bet()
+      await lotteryContract.connect(playerD).bet()
+      await lotteryContract.connect(playerC).bet()
+      await lotteryContract.connect(playerB).bet()
+
+      await ethers.provider.send('evm_mine', [newTimestampInSeconds])
+
+      await lotteryContract.connect(deployer).endLottery()
+
+      const ownerTokensBeforeFeeCollection = await lotteryTokenContract.balanceOf(
+        deployer.address,
+      )
+
+      // console.log(await lotteryContract.feeCollection())
+      await lotteryContract.collectFees()
+
+      const ownerTokensAfterFeeCollection = await lotteryTokenContract.balanceOf(
+        deployer.address,
+      )
+
+      expect(ownerTokensAfterFeeCollection.gt(ownerTokensBeforeFeeCollection))
+        .to.be.true
+    })
+  })
 })

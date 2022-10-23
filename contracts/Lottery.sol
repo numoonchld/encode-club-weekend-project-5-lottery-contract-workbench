@@ -165,9 +165,13 @@ contract Lottery is Ownable {
 
     /// @notice owner collects accumulated fees and restarts lottery
     function collectFees() public onlyOwner {
+        require(
+            (feeCollection * (1 ether)) > (0.05 ether),
+            "Lottery, fee collected too less to collect!"
+        );
+
         feeToWithdraw = feeCollection;
         feeCollection = 0;
-
         lotteryTxnToken.transfer(msg.sender, feeToWithdraw);
         feeToWithdraw = 0;
     }
