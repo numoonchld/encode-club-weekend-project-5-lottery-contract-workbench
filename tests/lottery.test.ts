@@ -18,7 +18,7 @@ describe('Lottery', () => {
   const LOTTERY_DURATION_IN_SECONDS = 180
   let lotteryStartEpochInSeconds: number
 
-  before(async () => {
+  beforeEach(async () => {
     // ether values in string type
     // BET_PRICE = ethers.utils.parseEther('0.5')
     // BET_FEE = ethers.utils.parseEther('0.01')
