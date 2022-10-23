@@ -250,5 +250,36 @@ describe('Lottery', () => {
         'Lottery: Betting window closed!',
       )
     })
+
+    it('does not allow owner betting', async () => {
+      const [owner] = await ethers.getSigners()
+
+      await lotteryContract
+        .connect(owner)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
+
+      expect(await lotteryTokenContract.balanceOf(owner.address)).to.eq(
+        ethers.utils.parseEther('10'),
+      )
+
+      await lotteryTokenContract
+        .connect(owner)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(owner.address),
+        )
+
+      lotteryStartEpochInSeconds = currentEpoch()
+      const lotteryEndEpochInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
+
+      await expect(lotteryContract.connect(owner).bet()).to.have.revertedWith(
+        'Lottery: Owner not allowed to bet!',
+      )
+    })
   })
 })

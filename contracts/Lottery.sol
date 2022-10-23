@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: none
 pragma solidity >=0.7.0 <0.9.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,8 +12,10 @@ contract Lottery is Ownable {
     uint256 public betFee;
 
     LotteryToken public lotteryTxnToken;
-    address[] public lotteryPlayers;
+    /// @notice updated when token are bought
     mapping(address => bool) public activeLotteryPlayers;
+    /// @notice updated when bets are placed
+    address[] public lotteryPlayers;
 
     uint256 public currentLotteryPayoutPool;
     address public latestLotteryWinner;
@@ -107,6 +109,8 @@ contract Lottery is Ownable {
 
     /// @notice place lottery bets
     function bet() public whenLotteryOpen {
+        require(msg.sender != owner(), "Lottery: Owner not allowed to bet!");
+
         // register lottery better into contract's state
         lotteryPlayers.push(msg.sender);
         currentLotteryPayoutPool += betPrice;
