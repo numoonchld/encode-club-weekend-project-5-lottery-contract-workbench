@@ -70,7 +70,7 @@ describe('Lottery', () => {
 
       await expect(
         lotteryContract.startLottery(closingEpochInSeconds),
-      ).to.be.revertedWith('Lottery: Closing time must be in the future')
+      ).to.be.revertedWith('Lottery: Closing time must be in the future!')
     })
 
     it('Define a block timestamp target (for closing lottery bets), upon lottery start by Owner', async () => {
@@ -98,20 +98,74 @@ describe('Lottery', () => {
 
       await lotteryContract
         .connect(playerA)
-        .sellLotteryTokens({ value: ethers.utils.parseEther('1') })
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
 
       expect(await lotteryTokenContract.balanceOf(playerA.address)).to.eq(
-        ethers.utils.parseEther('1'),
+        ethers.utils.parseEther('10'),
       )
 
       expect(await ethers.provider.getBalance(lotteryContract.address)).to.eq(
-        ethers.utils.parseEther('1'),
+        ethers.utils.parseEther('10'),
       )
     })
   })
-  describe('Players pay ERC20 to bet, Only possible before block timestamp met', () => {})
+
+  describe('Players pay ERC20 to bet, Only possible before block timestamp met', () => {
+    it('validates lottery bets placed by participants', async () => {
+      const [, playerA] = await ethers.getSigners()
+
+      expect(await lotteryContract.currentLotteryPayoutPool()).to.eq(
+        ethers.utils.parseEther('0'),
+      )
+
+      expect(await lotteryContract.feeCollection()).to.eq(
+        ethers.utils.parseEther('0'),
+      )
+
+      await lotteryContract
+        .connect(playerA)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
+
+      expect(await lotteryTokenContract.balanceOf(playerA.address)).to.eq(
+        ethers.utils.parseEther('10'),
+      )
+
+      await lotteryTokenContract
+        .connect(playerA)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerA.address),
+        )
+
+      await lotteryContract.connect(playerA).bet()
+
+      expect(await lotteryContract.currentLotteryPayoutPool()).to.eq(
+        BET_PRICE_DEPLOY_FRIENDLY_FORMAT,
+      )
+
+      expect(await lotteryContract.feeCollection()).to.eq(
+        BET_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
+
+      expect(
+        await lotteryTokenContract.balanceOf(lotteryContract.address),
+      ).to.eq(
+        BET_PRICE_DEPLOY_FRIENDLY_FORMAT.add(BET_FEE_DEPLOY_FRIENDLY_FORMAT),
+      )
+    })
+  })
+
   describe('Anyone can roll the lottery, Only after block timestamp target is met', () => {})
-  describe('Winner receives the pooled ERC20 minus fee', () => {})
+
+  describe('Winner receives the pooled ERC20 minus fee', () => {
+    /* 
+    although Solidity is turing complete, 
+    it currently doesn't have capacity to facilities simple-to-implement division
+    https://blog.b9lab.com/the-joy-of-minimalism-in-smart-contract-design-2303010c8b09
+    */
+  })
+
   describe('Owner can withdraw fees and restart lottery', () => {})
+
   describe('Players can burn ERC20 tokens and redeem ETH', () => {})
 })
