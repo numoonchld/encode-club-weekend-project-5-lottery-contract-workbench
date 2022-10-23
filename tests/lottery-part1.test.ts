@@ -24,6 +24,10 @@ describe('Lottery', () => {
   const LOTTERY_DURATION_IN_SECONDS = 180
   let lotteryStartEpochInSeconds: number
 
+  const BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT = ethers.utils.parseEther(
+    '0.05',
+  )
+
   beforeEach(async () => {
     // ether values in string type
     // BET_PRICE = ethers.utils.parseEther('0.5')
@@ -79,7 +83,10 @@ describe('Lottery', () => {
       expect(await lotteryContract.lotteryOpen()).to.be.false
 
       await expect(
-        lotteryContract.startLottery(closingEpochInSeconds),
+        lotteryContract.startLottery(
+          closingEpochInSeconds,
+          BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+        ),
       ).to.be.revertedWith('Lottery: Closing time must be in the future!')
     })
 
@@ -89,7 +96,10 @@ describe('Lottery', () => {
 
       expect(await lotteryContract.lotteryOpen()).to.be.false
 
-      await lotteryContract.startLottery(closingEpochInSeconds)
+      await lotteryContract.startLottery(
+        closingEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
 
       expect(await lotteryContract.lotteryClosingEpochInSeconds()).to.eq(
         closingEpochInSeconds,
@@ -181,7 +191,10 @@ describe('Lottery', () => {
       lotteryStartEpochInSeconds = currentEpoch()
       const lotteryEndEpochInSeconds =
         lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
-      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
 
       await lotteryContract.connect(playerA).bet()
 
@@ -227,7 +240,10 @@ describe('Lottery', () => {
           await lotteryTokenContract.balanceOf(playerB.address),
         )
 
-      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
       await ethers.provider.send('evm_mine', [newTimestampInSeconds])
 
       await expect(lotteryContract.connect(playerB).bet()).to.be.revertedWith(

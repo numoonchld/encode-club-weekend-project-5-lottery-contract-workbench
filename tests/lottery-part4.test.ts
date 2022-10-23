@@ -9,6 +9,7 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import currentEpoch from '../scripts/helpers/currentEpoch'
+import calculateWinningFee from '../scripts/helpers/calculateWinningFee'
 
 describe('Lottery', () => {
   let lotteryContract: Lottery
@@ -62,42 +63,5 @@ describe('Lottery', () => {
     )
   })
 
-  describe('Anyone can roll the lottery, Only after block timestamp target is met', () => {
-    it('end lottery works after target timestamp', async () => {
-      const [, , , , , playerE] = await ethers.getSigners()
-
-      lotteryStartEpochInSeconds = currentEpoch()
-
-      const lotteryEndEpochInSeconds =
-        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
-
-      // https://ethereum.stackexchange.com/a/112809
-      const newTimestampInSeconds =
-        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS * 2
-
-      await lotteryContract
-        .connect(playerE)
-        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
-
-      await lotteryContract.startLottery(
-        lotteryEndEpochInSeconds,
-        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
-      )
-
-      expect(await lotteryContract.lotteryOpen()).to.be.true
-
-      await expect(
-        lotteryContract.connect(playerE).endLottery(),
-      ).to.be.revertedWith('Lottery: Betting window still open!')
-
-      await ethers.provider.send('evm_mine', [newTimestampInSeconds])
-
-      await lotteryContract.connect(playerE).endLottery()
-
-      expect(await lotteryContract.lotteryOpen()).to.be.false
-      expect(await lotteryContract.currentLotteryPayoutPool()).to.eq(
-        ethers.utils.parseEther('0'),
-      )
-    })
-  })
+  describe('Owner can withdraw fees and restart lottery', () => {})
 })

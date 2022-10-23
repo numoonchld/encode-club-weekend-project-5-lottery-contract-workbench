@@ -23,6 +23,10 @@ describe('Lottery', () => {
   const LOTTERY_DURATION_IN_SECONDS = 180
   let lotteryStartEpochInSeconds: number
 
+  const BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT = ethers.utils.parseEther(
+    '0.05',
+  )
+
   beforeEach(async () => {
     // ether values in string type
     // BET_PRICE = ethers.utils.parseEther('0.5')
@@ -85,7 +89,10 @@ describe('Lottery', () => {
           lotteryContract.address,
           await lotteryTokenContract.balanceOf(playerD.address),
         )
-      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
 
       expect(await lotteryContract.lotteryOpen()).to.be.true
 

@@ -23,6 +23,10 @@ describe('Lottery', () => {
   const LOTTERY_DURATION_IN_SECONDS = 180
   let lotteryStartEpochInSeconds: number
 
+  const BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT = ethers.utils.parseEther(
+    '0.05',
+  )
+
   beforeEach(async () => {
     // ether values in string type
     // BET_PRICE = ethers.utils.parseEther('0.5')
@@ -66,7 +70,7 @@ describe('Lottery', () => {
     */
 
     it('returns zero address if no players', async () => {
-      const [, , , playerC] = await ethers.getSigners()
+      const [deployer] = await ethers.getSigners()
 
       lotteryStartEpochInSeconds = currentEpoch()
 
@@ -77,19 +81,18 @@ describe('Lottery', () => {
       const newTimestampInSeconds =
         lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS * 2
 
-      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+      await lotteryContract.startLottery(
+        lotteryEndEpochInSeconds,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
 
       await ethers.provider.send('evm_mine', [newTimestampInSeconds])
 
-      const endLotteryTxn = await lotteryContract.connect(playerC).endLottery()
-      await endLotteryTxn.wait()
+      await lotteryContract.connect(deployer).endLottery()
 
-      console.log({ endLotteryTxn })
+      expect(await lotteryContract.latestLotteryWinner()).to.eq(
+        ethers.constants.AddressZero,
+      )
     })
-    it('returns zero address if no players', async () => {})
   })
-
-  describe('Owner can withdraw fees and restart lottery', () => {})
-
-  describe('Players can burn ERC20 tokens and redeem ETH', () => {})
 })
