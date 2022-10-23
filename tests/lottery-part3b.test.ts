@@ -157,6 +157,7 @@ describe('Lottery', () => {
 
       const winnerAddress = await lotteryContract.latestLotteryWinner()
       expect(playerAddresses).to.include(winnerAddress)
+      const winningAccount = await ethers.getSigner(winnerAddress)
 
       const unclaimedWinningAmount = await lotteryContract.winningStash(
         winnerAddress,
@@ -172,7 +173,9 @@ describe('Lottery', () => {
       )
       const feeCollectedBeforeClaim = await lotteryContract.feeCollection()
 
-      await lotteryContract.withdrawWinning(winnerAddress, calculatedWinningFee)
+      await lotteryContract
+        .connect(winningAccount)
+        .withdrawWinning(calculatedWinningFee)
 
       const winnerTokenBalanceAfterClaim = await lotteryTokenContract.balanceOf(
         winnerAddress,
