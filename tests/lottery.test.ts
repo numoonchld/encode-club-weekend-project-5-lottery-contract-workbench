@@ -3,6 +3,7 @@ import { LotteryToken } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { BigNumber } from 'ethers'
+import currentEpoch from '../scripts/helpers/currentEpoch'
 
 describe('Lottery', () => {
   let lotteryContract: Lottery
@@ -13,6 +14,9 @@ describe('Lottery', () => {
 
   let BET_PRICE_DEPLOY_FRIENDLY_FORMAT: BigNumber
   let BET_FEE_DEPLOY_FRIENDLY_FORMAT: BigNumber
+
+  const LOTTERY_DURATION_IN_SECONDS = 180
+  let lotteryStartEpochInSeconds: number
 
   before(async () => {
     // ether values in string type
@@ -111,6 +115,37 @@ describe('Lottery', () => {
   })
 
   describe('Players pay ERC20 to bet, Only possible before block timestamp met', () => {
+    it('reverts bet if lottery is not open yet', async () => {
+      const [, playerA] = await ethers.getSigners()
+
+      expect(await lotteryContract.currentLotteryPayoutPool()).to.eq(
+        ethers.utils.parseEther('0'),
+      )
+
+      expect(await lotteryContract.feeCollection()).to.eq(
+        ethers.utils.parseEther('0'),
+      )
+
+      await lotteryContract
+        .connect(playerA)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
+
+      expect(await lotteryTokenContract.balanceOf(playerA.address)).to.eq(
+        ethers.utils.parseEther('10'),
+      )
+
+      await lotteryTokenContract
+        .connect(playerA)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerA.address),
+        )
+
+      await expect(lotteryContract.connect(playerA).bet()).to.be.revertedWith(
+        'Lottery: Not yet open for bets!',
+      )
+    })
+
     it('validates lottery bets placed by participants', async () => {
       const [, playerA] = await ethers.getSigners()
 
@@ -137,6 +172,11 @@ describe('Lottery', () => {
           await lotteryTokenContract.balanceOf(playerA.address),
         )
 
+      lotteryStartEpochInSeconds = currentEpoch()
+      const lotteryEndEpochInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
+      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+
       await lotteryContract.connect(playerA).bet()
 
       expect(await lotteryContract.currentLotteryPayoutPool()).to.eq(
@@ -151,6 +191,41 @@ describe('Lottery', () => {
         await lotteryTokenContract.balanceOf(lotteryContract.address),
       ).to.eq(
         BET_PRICE_DEPLOY_FRIENDLY_FORMAT.add(BET_FEE_DEPLOY_FRIENDLY_FORMAT),
+      )
+    })
+
+    it('betting blocked after time window ends', async () => {
+      lotteryStartEpochInSeconds = currentEpoch()
+
+      const lotteryEndEpochInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS
+
+      // https://ethereum.stackexchange.com/a/112809
+      const newTimestampInSeconds =
+        lotteryStartEpochInSeconds + LOTTERY_DURATION_IN_SECONDS * 2
+
+      const [, , playerB] = await ethers.getSigners()
+
+      await lotteryContract
+        .connect(playerB)
+        .sellLotteryTokens({ value: ethers.utils.parseEther('10') })
+
+      expect(await lotteryTokenContract.balanceOf(playerB.address)).to.eq(
+        ethers.utils.parseEther('10'),
+      )
+
+      await lotteryTokenContract
+        .connect(playerB)
+        .approve(
+          lotteryContract.address,
+          await lotteryTokenContract.balanceOf(playerB.address),
+        )
+
+      await lotteryContract.startLottery(lotteryEndEpochInSeconds)
+      await ethers.provider.send('evm_mine', [newTimestampInSeconds])
+
+      await expect(lotteryContract.connect(playerB).bet()).to.be.revertedWith(
+        'Lottery: Betting window closed!',
       )
     })
   })

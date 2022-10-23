@@ -13,7 +13,7 @@ contract Lottery is Ownable {
 
     LotteryToken public lotteryTxnToken;
 
-    address[] public lotteryParticipants;
+    address[] public lotteryPlayers;
     uint256 public currentLotteryPayoutPool;
     uint256 public feeCollection;
     mapping(address => uint256) public winningStash;
@@ -41,7 +41,7 @@ contract Lottery is Ownable {
         require(lotteryOpen, "Lottery: Not yet open for bets!");
         require(
             block.timestamp < lotteryClosingEpochInSeconds,
-            "Lottery: Bettng window closed!"
+            "Lottery: Betting window closed!"
         );
         _;
     }
@@ -85,9 +85,9 @@ contract Lottery is Ownable {
     }
 
     /// @notice place lottery bets
-    function bet() public {
+    function bet() public whenLotteryOpen {
         // register lottery better into contract's state
-        lotteryParticipants.push(msg.sender);
+        lotteryPlayers.push(msg.sender);
         currentLotteryPayoutPool += betPrice;
         feeCollection += betFee;
 
@@ -111,9 +111,7 @@ contract Lottery is Ownable {
         uint256 randomNumber = block.difficulty;
 
         // calculate winning index of participant addresses
-        winnerAddress = lotteryParticipants[
-            randomNumber % lotteryParticipants.length
-        ];
+        winnerAddress = lotteryPlayers[randomNumber % lotteryPlayers.length];
 
         // assign the current lottery pool value to addres
         winningStash[winnerAddress] += currentLotteryPayoutPool;
