@@ -12,8 +12,9 @@ contract Lottery is Ownable {
     uint256 public betFee;
 
     LotteryToken public lotteryTxnToken;
-
     address[] public lotteryPlayers;
+    mapping(address => bool) public lotteryPlayerBoughtTokens;
+
     uint256 public currentLotteryPayoutPool;
     uint256 public feeCollection;
     mapping(address => uint256) public winningStash;
@@ -50,7 +51,7 @@ contract Lottery is Ownable {
         require(lotteryOpen, "Lottery: Not yet open for bets!");
         require(
             block.timestamp > lotteryClosingEpochInSeconds,
-            "Lottery: Bettng window still open!"
+            "Lottery: Betting window still open!"
         );
         _;
     }
@@ -80,6 +81,8 @@ contract Lottery is Ownable {
 
     /// @notice receive ether to provide lottery tokens
     function sellLotteryTokens() public payable {
+        lotteryPlayerBoughtTokens[msg.sender] = true;
+
         // mint tokens for buyer's account in token contract
         lotteryTxnToken.mint(msg.sender, msg.value);
     }
@@ -106,15 +109,23 @@ contract Lottery is Ownable {
         isLotteryCloseable
         returns (address winnerAddress)
     {
+        require(
+            lotteryPlayerBoughtTokens[msg.sender] == true,
+            "Lottery: You are not an active player!"
+        );
         /// @notice generates a block-property-based random number
         /// @dev works only after the merge
         uint256 randomNumber = block.difficulty;
 
         // calculate winning index of participant addresses
-        winnerAddress = lotteryPlayers[randomNumber % lotteryPlayers.length];
+        if (lotteryPlayers.length > 0) {
+            winnerAddress = lotteryPlayers[
+                randomNumber % lotteryPlayers.length
+            ];
 
-        // assign the current lottery pool value to addres
-        winningStash[winnerAddress] += currentLotteryPayoutPool;
+            // assign the current lottery pool value to addres
+            winningStash[winnerAddress] += currentLotteryPayoutPool;
+        }
 
         // reset current lottery pool
         currentLotteryPayoutPool = 0;

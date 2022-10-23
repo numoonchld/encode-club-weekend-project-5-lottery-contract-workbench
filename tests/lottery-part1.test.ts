@@ -1,3 +1,9 @@
+/* NOTE: 
+- splitting up files to keep only one evm_mine in each file
+- evm_mine only takes the test blockchain forward in time and cannot be taken back in time
+- Running all tests at once in the same file (in CLI or Mocha Test Explorer) will fail tests involving `evm_mine`
+*/
+
 import { Lottery } from '../typechain-types'
 import { LotteryToken } from '../typechain-types'
 import { ethers } from 'hardhat'
@@ -229,18 +235,4 @@ describe('Lottery', () => {
       )
     })
   })
-
-  describe('Anyone can roll the lottery, Only after block timestamp target is met', () => {})
-
-  describe('Winner receives the pooled ERC20 minus fee', () => {
-    /* 
-    although Solidity is turing complete, 
-    it currently doesn't have capacity to facilities simple-to-implement division
-    https://blog.b9lab.com/the-joy-of-minimalism-in-smart-contract-design-2303010c8b09
-    */
-  })
-
-  describe('Owner can withdraw fees and restart lottery', () => {})
-
-  describe('Players can burn ERC20 tokens and redeem ETH', () => {})
 })
