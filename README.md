@@ -1,13 +1,11 @@
-# Sample Hardhat Project
+# local node and deploy scripts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+- open two terminals
+- in the first, run: `npx hardhat node`
+  - to get the local ethereum node started
+- in the second, run: `npx hardhat run --network localhost scripts/deploy/localHardhatNode.ts`
 
-Try running some of the following tasks:
+  - this is the deploy script for the lottery and its token contracts
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+- note the address of these contracts
+  - and add it to the `contracts.json` file on the frontend repo
