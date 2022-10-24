@@ -166,6 +166,10 @@ contract Lottery is Ownable {
             winningStash[msg.sender] = 0;
             lotteryTxnToken.transfer(msg.sender, winningsToTransfer);
         } else {
+            require(
+                winningStash[msg.sender] > winningWithdrawBaseFee,
+                "Winning less than fee!"
+            );
             feeCollection += winningWithdrawBaseFee;
             winningsToTransfer =
                 winningStash[msg.sender] -

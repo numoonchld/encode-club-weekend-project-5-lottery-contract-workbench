@@ -1,5 +1,6 @@
 /* NOTE: 
 - splitting up files to keep only one evm_mine in each file
+- if some test fails, then run it by itself, do not run the test by file or the whole describe block
 - evm_mine only takes the test blockchain forward in time and cannot be taken back in time
 - Running all tests at once in the same file (in CLI or Mocha Test Explorer) will fail tests involving `evm_mine`
 */

@@ -179,11 +179,9 @@ describe('Lottery', () => {
 
       await lotteryContract
         .connect(winningAccount)
-        .trackLatestBurn(winnerTokenBalanceAfterClaim)
+        .trackLatestBurn(amountToBurn)
 
-      await lotteryTokenContract
-        .connect(winningAccount)
-        .burn(winnerTokenBalanceAfterClaim)
+      await lotteryTokenContract.connect(winningAccount).burn(amountToBurn)
 
       await lotteryContract.connect(winningAccount).withdrawLastBurnToEther()
 
