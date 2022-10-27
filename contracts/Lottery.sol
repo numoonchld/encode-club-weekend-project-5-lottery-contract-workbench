@@ -21,7 +21,7 @@ contract Lottery is Ownable {
     address public latestLotteryWinner;
     mapping(address => uint256) public winningStash;
     uint256 public winningWithdrawBaseFee;
-    uint256 private winningsToTransfer;
+    mapping(address => uint256) private winningsToTransfer;
 
     uint256 public feeCollection;
     uint256 private feeToWithdraw;
@@ -149,38 +149,26 @@ contract Lottery is Ownable {
     }
 
     /// @notice withdraw winnings if the sender has any
-    function withdrawWinning(uint256 _calculatedWinningFee)
+    function withdrawWinning(uint256 _feeToDeduct)
         public
         isActiveLotteryPlayer
     {
         require(
-            (winningStash[msg.sender] * (1 ether)) > 1 ether,
-            "Lottery: Insuffienct winning tokens to claim!"
+            _feeToDeduct > winningWithdrawBaseFee,
+            "Lottery: Insufficient fee deduction!"
+        );
+        require(
+            winningStash[msg.sender] > _feeToDeduct,
+            "Lottery: Not enough winnings to withdraw!"
         );
 
-        if (_calculatedWinningFee > winningWithdrawBaseFee) {
-            feeCollection += _calculatedWinningFee;
-            winningsToTransfer =
-                winningStash[msg.sender] -
-                _calculatedWinningFee;
-            winningStash[msg.sender] = 0;
-            lotteryTxnToken.transfer(msg.sender, winningsToTransfer);
-        } else {
-            require(
-                winningStash[msg.sender] > winningWithdrawBaseFee,
-                "Winning less than fee!"
-            );
-            feeCollection += winningWithdrawBaseFee;
-            winningsToTransfer =
-                winningStash[msg.sender] -
-                winningWithdrawBaseFee;
-            winningStash[msg.sender] = 0;
-            lotteryTxnToken.transfer(
-                msg.sender,
-                winningStash[msg.sender] - winningWithdrawBaseFee
-            );
-        }
-        winningsToTransfer = 0;
+        winningsToTransfer[msg.sender] =
+            winningStash[msg.sender] -
+            _feeToDeduct;
+        winningStash[msg.sender] = 0;
+        feeCollection += _feeToDeduct;
+        lotteryTxnToken.transfer(msg.sender, winningsToTransfer[msg.sender]);
+        winningsToTransfer[msg.sender] = 0;
     }
 
     /// @notice owner collects accumulated fees and restarts lottery
