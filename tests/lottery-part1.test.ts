@@ -251,7 +251,9 @@ describe('Lottery', () => {
         'Lottery: Betting window closed!',
       )
     })
+  })
 
+  describe('When owner bets', () => {
     it('does not allow owner betting', async () => {
       const [owner] = await ethers.getSigners()
 
