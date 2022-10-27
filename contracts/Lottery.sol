@@ -16,6 +16,7 @@ contract Lottery is Ownable {
     mapping(address => bool) public activeLotteryPlayers;
     /// @notice updated when bets are placed
     address[] public lotteryPlayers;
+    mapping(address => bool) isOnePlayerBetRegistered;
 
     uint256 public currentLotteryPayoutPool;
     address public latestLotteryWinner;
@@ -107,22 +108,28 @@ contract Lottery is Ownable {
         lotteryTxnToken.mint(msg.sender, msg.value);
     }
 
+    /// @notice track unique users
+    function manageUserUniqueness(address _bettingUser)
+        internal
+        whenLotteryOpen
+    {
+        if (isOnePlayerBetRegistered[_bettingUser] == false) {
+            lotteryPlayers.push(_bettingUser);
+        }
+    }
+
     /// @notice place lottery bets
     function bet() public whenLotteryOpen {
         require(msg.sender != owner(), "Lottery: Owner not allowed to bet!");
 
         // register lottery better into contract's state
-        lotteryPlayers.push(msg.sender);
+        manageUserUniqueness(msg.sender);
         currentLotteryPayoutPool += betPrice;
         feeCollection += betFee;
 
         // transfer lotterTokens into lottery contract's account from better's account
         // https://stackoverflow.com/a/71809065
-        lotteryTxnToken.transferFrom(
-            msg.sender,
-            address(this),
-            betPrice + betFee
-        );
+        lotteryTxnToken.transferFrom(msg.sender, address(this), betPrice);
     }
 
     /// @notice ends currently open lottery pool (if one is active) and calculates possible winnings
@@ -148,27 +155,19 @@ contract Lottery is Ownable {
         lotteryOpen = false;
     }
 
-    /// @notice withdraw winnings if the sender has any
-    function withdrawWinning(uint256 _feeToDeduct)
+    /// @notice withdraw winnings after deducting fee
+    function withdrawWinning(uint256 _winningAmount, uint256 _feeToDeduct)
         public
         isActiveLotteryPlayer
     {
         require(
-            _feeToDeduct > winningWithdrawBaseFee,
-            "Lottery: Insufficient fee deduction!"
+            winningStash[msg.sender] == _winningAmount + _feeToDeduct,
+            "Lottery: Winning fee calculation failed!"
         );
-        require(
-            winningStash[msg.sender] > _feeToDeduct,
-            "Lottery: Not enough winnings to withdraw!"
-        );
-
-        winningsToTransfer[msg.sender] =
-            winningStash[msg.sender] -
-            _feeToDeduct;
-        winningStash[msg.sender] = 0;
         feeCollection += _feeToDeduct;
-        lotteryTxnToken.transfer(msg.sender, winningsToTransfer[msg.sender]);
-        winningsToTransfer[msg.sender] = 0;
+
+        lotteryTxnToken.transfer(msg.sender, _winningAmount);
+        winningStash[msg.sender] = 0;
     }
 
     /// @notice owner collects accumulated fees and restarts lottery
