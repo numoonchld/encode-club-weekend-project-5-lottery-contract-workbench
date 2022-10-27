@@ -209,9 +209,7 @@ describe('Lottery', () => {
 
       expect(
         await lotteryTokenContract.balanceOf(lotteryContract.address),
-      ).to.eq(
-        BET_PRICE_DEPLOY_FRIENDLY_FORMAT.add(BET_FEE_DEPLOY_FRIENDLY_FORMAT),
-      )
+      ).to.eq(BET_PRICE_DEPLOY_FRIENDLY_FORMAT)
     })
 
     it('betting blocked after time window ends', async () => {
