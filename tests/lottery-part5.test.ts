@@ -157,16 +157,17 @@ describe('Lottery', () => {
         winnerAddress,
       )
 
-      const [, calculatedWinningFee] = calculateWinningFee(
-        unclaimedWinningAmount,
-      )
+      const [
+        winningAmountAfterFeeDeduction,
+        calculatedWinningFee,
+      ] = calculateWinningFee(unclaimedWinningAmount)
 
       const winnerTokenBalanceBeforeClaim = await lotteryTokenContract.balanceOf(
         winnerAddress,
       )
       await lotteryContract
         .connect(winningAccount)
-        .withdrawWinning(calculatedWinningFee)
+        .withdrawWinning(winningAmountAfterFeeDeduction, calculatedWinningFee)
 
       const winnerTokenBalanceAfterClaim = await lotteryTokenContract.balanceOf(
         winnerAddress,
