@@ -7,6 +7,7 @@ import {LotteryToken} from "./LotteryToken.sol";
 contract Lottery is Ownable {
     uint256 public lotteryClosingEpochInSeconds;
     bool public lotteryOpen;
+    uint256 public maxPlayersPerRoll;
 
     uint256 public betPrice;
     uint256 public betFee;
@@ -39,6 +40,9 @@ contract Lottery is Ownable {
     ) {
         betPrice = _betPrice;
         betFee = _betFee;
+
+        // limit number of lottery players to 10 per roll
+        maxPlayersPerRoll = 14;
 
         activeLotteryPlayers[msg.sender] = true;
 
@@ -122,6 +126,10 @@ contract Lottery is Ownable {
     /// @notice place lottery bets
     function bet() public whenLotteryOpen {
         require(msg.sender != owner(), "Lottery: Owner not allowed to bet!");
+        require(
+            lotteryPlayers.length <= maxPlayersPerRoll,
+            "Lottery: Current lottery player capacity maxed out!"
+        );
 
         // register lottery better into contract's state
         manageUserUniqueness(msg.sender);
@@ -160,6 +168,20 @@ contract Lottery is Ownable {
 
         // change state of contract
         lotteryOpen = false;
+
+        // reset lottery participants
+        resetLotteryParticipants();
+    }
+
+    /// @notice reset lottery participants after lottery roll
+    function resetLotteryParticipants() private {
+        for (
+            uint256 playerIndex = 0;
+            playerIndex < lotteryPlayers.length;
+            playerIndex++
+        ) {
+            activeLotteryPlayers[lotteryPlayers[playerIndex]] = false;
+        }
     }
 
     /// @notice withdraw winnings after deducting fee
