@@ -115,6 +115,7 @@ contract Lottery is Ownable {
     {
         if (isOnePlayerBetRegistered[_bettingUser] == false) {
             lotteryPlayers.push(_bettingUser);
+            isOnePlayerBetRegistered[_bettingUser] = true;
         }
     }
 
