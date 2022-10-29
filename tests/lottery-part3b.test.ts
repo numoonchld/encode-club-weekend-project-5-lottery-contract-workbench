@@ -70,7 +70,7 @@ describe('Lottery', () => {
     https://blog.b9lab.com/the-joy-of-minimalism-in-smart-contract-design-2303010c8b09
     */
 
-    it('winner is able to withdraw, full fee must be calculated externally', async () => {
+    it('winner is able to claim winnings, applicable fee must be calculated externally', async () => {
       const [
         deployer,
         playerA,

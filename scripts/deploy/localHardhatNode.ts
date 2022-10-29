@@ -1,10 +1,8 @@
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers, BigNumber } from 'ethers'
+import { ethers } from 'ethers'
 
 async function main() {
   console.log('Deploying Lottery contract --------------------------\n')
-
-  // const [deployer] = await hardhatEthers.getSigners()
 
   const BET_PRICE = ethers.utils.parseEther('0.5')
   const BET_FEE = ethers.utils.parseEther('0.01')
