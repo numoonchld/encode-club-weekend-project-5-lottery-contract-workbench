@@ -149,11 +149,84 @@ describe('Lottery', () => {
 
       await lotteryContract.connect(deployer).endLottery()
 
+      // WINNER WITHDRAWS WINNINGS
+      const winnerAddress = await lotteryContract.latestLotteryWinner()
+      console.log(
+        'winner address winning stash:',
+        await lotteryContract.winningStash(winnerAddress),
+      )
+      expect(playerAddresses).to.include(winnerAddress)
+
+      const winningAccount = await ethers.getSigner(winnerAddress)
+
+      const unclaimedWinningAmount = await lotteryContract.winningStash(
+        winnerAddress,
+      )
+      expect(unclaimedWinningAmount).to.be.greaterThan(0)
+      expect(BigNumber.isBigNumber(unclaimedWinningAmount)).to.be.true
+
+      const [
+        winningAmountAfterFeeDeduction,
+        calculatedWinningFee,
+      ] = calculateWinningFee(unclaimedWinningAmount)
+
+      console.log(
+        winningAmountAfterFeeDeduction,
+        calculatedWinningFee,
+        BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT,
+      )
+
+      const winnerTokenBalanceBeforeClaim = await lotteryTokenContract.balanceOf(
+        winnerAddress,
+      )
+      const feeCollectedBeforeClaim = await lotteryContract.feeCollection()
+
+      if (calculatedWinningFee.gte(BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT)) {
+        console.log('calculated fee greater')
+        await lotteryContract
+          .connect(winningAccount)
+          .withdrawWinning(winningAmountAfterFeeDeduction, calculatedWinningFee)
+      } else {
+        console.log('base fee greater')
+        const baseFeeCalculatedFeeDelta = BASE_WINNING_FEE_DEPLOY_FRIENDLY_FORMAT.sub(
+          calculatedWinningFee,
+        )
+        const effectiveWinningAmount = winningAmountAfterFeeDeduction.sub(
+          baseFeeCalculatedFeeDelta,
+        )
+
+        if (effectiveWinningAmount.gte(ethers.utils.parseEther('0.005'))) {
+          await lotteryContract
+            .connect(winningAccount)
+            .withdrawWinning(
+              winningAmountAfterFeeDeduction,
+              calculatedWinningFee,
+            )
+
+          const winnerTokenBalanceAfterClaim = await lotteryTokenContract.balanceOf(
+            winnerAddress,
+          )
+          const feeCollectedAfterClaim = await lotteryContract.feeCollection()
+
+          expect(winnerTokenBalanceAfterClaim.gt(winnerTokenBalanceBeforeClaim))
+            .to.be.true
+          expect(feeCollectedAfterClaim.gt(feeCollectedBeforeClaim)).to.be.true
+          expect(
+            feeCollectedAfterClaim.eq(
+              feeCollectedBeforeClaim.add(calculatedWinningFee),
+            ),
+          ).to.be.true
+        }
+      }
+
+      // FEE COLLECTION
       const ownerTokensBeforeFeeCollection = await lotteryTokenContract.balanceOf(
         deployer.address,
       )
 
-      // console.log(await lotteryContract.feeCollection())
+      console.log(await lotteryContract.feeCollection())
+      console.log(await lotteryTokenContract.balanceOf(lotteryContract.address))
+
       await lotteryContract.collectFees()
 
       const ownerTokensAfterFeeCollection = await lotteryTokenContract.balanceOf(
